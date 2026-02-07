@@ -262,6 +262,22 @@ export class TikTokAPI {
             throw new Error('Could not extract user data from page');
         }
         
+        // Helper to safely parse large numbers (TikTok can return huge counts)
+        const safeNumber = (val) => {
+            if (val === null || val === undefined) return null;
+            // If it's already a number and negative, it overflowed - try to recover
+            if (typeof val === 'number' && val < 0) {
+                // 32-bit overflow - convert back (this is approximate)
+                return val + 4294967296;
+            }
+            // Handle string numbers
+            if (typeof val === 'string') {
+                const parsed = parseInt(val, 10);
+                return isNaN(parsed) ? null : parsed;
+            }
+            return val;
+        };
+        
         // Normalize the data
         return {
             username: userData.uniqueId || username,
@@ -275,11 +291,11 @@ export class TikTokAPI {
             // Avatar
             avatarUrl: userData.avatarLarger || userData.avatarMedium || userData.avatarThumb || null,
             
-            // Stats
-            followers: stats?.followerCount ?? userData.followerCount ?? null,
-            following: stats?.followingCount ?? userData.followingCount ?? null,
-            likes: stats?.heartCount ?? stats?.heart ?? userData.heartCount ?? null,
-            videos: stats?.videoCount ?? userData.videoCount ?? null,
+            // Stats - use safeNumber to handle overflow
+            followers: safeNumber(stats?.followerCount ?? userData.followerCount),
+            following: safeNumber(stats?.followingCount ?? userData.followingCount),
+            likes: safeNumber(stats?.heartCount ?? stats?.heart ?? userData.heartCount),
+            videos: safeNumber(stats?.videoCount ?? userData.videoCount),
             
             // Engagement metrics (calculated)
             engagementRate: null, // Will be calculated if we have video data
