@@ -1,0 +1,53 @@
+{
+    "title": "TikTok Profile Scraper Input",
+    "description": "Configure the TikTok profile scraper",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "usernames": {
+            "title": "Usernames",
+            "description": "List of TikTok usernames to scrape (without @ symbol)",
+            "type": "array",
+            "editor": "stringList",
+            "items": {
+                "type": "string"
+            },
+            "example": ["tiktok", "charlidamelio", "khaby.lame"],
+            "prefill": ["tiktok"]
+        },
+        "urls": {
+            "title": "Profile URLs",
+            "description": "TikTok profile URLs (alternative to usernames)",
+            "type": "array",
+            "editor": "stringList",
+            "items": {
+                "type": "string"
+            },
+            "example": ["https://www.tiktok.com/@tiktok"]
+        },
+        "proxyConfiguration": {
+            "title": "Proxy Configuration",
+            "description": "Proxy settings for requests. Datacenter proxies usually work fine.",
+            "type": "object",
+            "editor": "proxy",
+            "sectionCaption": "Proxy",
+            "sectionDescription": "Configure proxy to avoid rate limiting"
+        },
+        "maxRetries": {
+            "title": "Max Retries",
+            "description": "Maximum number of retry attempts per profile",
+            "type": "integer",
+            "default": 3,
+            "minimum": 1,
+            "maximum": 10
+        },
+        "delayBetweenRequests": {
+            "title": "Delay Between Requests (ms)",
+            "description": "Delay in milliseconds between processing each profile",
+            "type": "integer",
+            "default": 1000,
+            "minimum": 0,
+            "maximum": 10000
+        }
+    }
+}

@@ -1,0 +1,56 @@
+{
+    "actorSpecification": 1,
+    "name": "tiktok-profile-scraper",
+    "title": "TikTok Profile Scraper",
+    "description": "Extract public profile metrics from TikTok accounts. Get followers, likes, videos, bio, and engagement data.",
+    "version": "1.0",
+    "buildTag": "latest",
+    "input": "./input_schema.json",
+    "dockerfile": "./Dockerfile",
+    "readme": "../README.md",
+    "storages": {
+        "dataset": {
+            "actorSpecification": 1,
+            "title": "TikTok Profile Data",
+            "views": {
+                "profiles": {
+                    "title": "Profile Metrics",
+                    "transformation": {
+                        "fields": [
+                            "username",
+                            "nickname",
+                            "followers",
+                            "following",
+                            "likes",
+                            "videos",
+                            "engagementRate",
+                            "verified",
+                            "bio"
+                        ]
+                    },
+                    "display": {
+                        "component": "table",
+                        "properties": {
+                            "username": {
+                                "label": "Username",
+                                "format": "text"
+                            },
+                            "followers": {
+                                "label": "Followers",
+                                "format": "number"
+                            },
+                            "likes": {
+                                "label": "Total Likes",
+                                "format": "number"
+                            },
+                            "engagementRate": {
+                                "label": "Engagement %",
+                                "format": "number"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

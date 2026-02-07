@@ -1,0 +1,7 @@
+node_modules/
+.env
+.env.local
+storage/
+apify_storage/
+.vscode/
+*.log
