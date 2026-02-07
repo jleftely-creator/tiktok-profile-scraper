@@ -102,6 +102,13 @@ for (const username of allUsernames) {
             profile.engagementRate = Math.round((avgLikesPerVideo / profile.followers) * 10000) / 100;
         }
         
+        // Calculate account age in days
+        if (profile.createdAt) {
+            const created = new Date(profile.createdAt);
+            const now = new Date();
+            profile.accountAgeDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+        }
+        
         // Remove raw data from output (keep it clean)
         const { _raw, ...cleanProfile } = profile;
         

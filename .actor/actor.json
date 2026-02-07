@@ -25,7 +25,12 @@
                             "videos",
                             "engagementRate",
                             "verified",
-                            "bio"
+                            "bio",
+                            "bioLink",
+                            "createdAt",
+                            "accountAgeDays",
+                            "commerceUser",
+                            "ttSeller"
                         ]
                     },
                     "display": {

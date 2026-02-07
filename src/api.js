@@ -278,7 +278,46 @@ export class TikTokAPI {
             return val;
         };
         
+        // Convert Unix timestamp to ISO date
+        const timestampToDate = (ts) => {
+            if (!ts) return null;
+            try {
+                return new Date(ts * 1000).toISOString();
+            } catch {
+                return null;
+            }
+        };
+        
+        // Extract all links from bio text
+        const extractBioLinks = (bio, bioLinkObj) => {
+            const links = [];
+            
+            // Add official bioLink if present
+            if (bioLinkObj?.link) {
+                links.push({
+                    url: bioLinkObj.link,
+                    type: 'official',
+                });
+            }
+            
+            // Extract URLs from bio text
+            if (bio) {
+                const urlRegex = /https?:\/\/[^\s]+|(?:www\.)[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.(com|net|org|io|co|me|link|bio)[^\s]*/gi;
+                const matches = bio.match(urlRegex) || [];
+                for (const match of matches) {
+                    const url = match.startsWith('http') ? match : `https://${match}`;
+                    if (!links.some(l => l.url === url)) {
+                        links.push({ url, type: 'bio_text' });
+                    }
+                }
+            }
+            
+            return links;
+        };
+        
         // Normalize the data
+        const bioLinks = extractBioLinks(userData.signature, userData.bioLink);
+        
         return {
             username: userData.uniqueId || username,
             nickname: userData.nickname || null,
@@ -292,17 +331,41 @@ export class TikTokAPI {
             avatarUrl: userData.avatarLarger || userData.avatarMedium || userData.avatarThumb || null,
             
             // Stats - use safeNumber to handle overflow
+            // Prefer 'heart' over 'heartCount' as it doesn't overflow
             followers: safeNumber(stats?.followerCount ?? userData.followerCount),
             following: safeNumber(stats?.followingCount ?? userData.followingCount),
-            likes: safeNumber(stats?.heartCount ?? stats?.heart ?? userData.heartCount),
+            likes: safeNumber(stats?.heart ?? stats?.heartCount ?? userData.heartCount),
             videos: safeNumber(stats?.videoCount ?? userData.videoCount),
+            friendCount: safeNumber(stats?.friendCount),
+            diggCount: safeNumber(stats?.diggCount), // Videos they've liked
             
             // Engagement metrics (calculated)
             engagementRate: null, // Will be calculated if we have video data
             
-            // Business info
+            // Account metadata
+            createdAt: timestampToDate(userData.createTime),
+            language: userData.language || null,
+            region: userData.region || null,
+            isOrganization: userData.isOrganization === 1,
+            
+            // Bio links (for cross-platform verification)
             bioLink: userData.bioLink?.link || null,
+            bioLinks: bioLinks, // All extracted links
+            
+            // Business/commerce
             commerceUser: userData.commerceUserInfo?.commerceUser || false,
+            ttSeller: userData.ttSeller || false,
+            
+            // Content settings (0=everyone, 1=friends, 2=off)
+            settings: {
+                comments: userData.commentSetting ?? null,
+                duet: userData.duetSetting ?? null,
+                stitch: userData.stitchSetting ?? null,
+                download: userData.downloadSetting ?? null,
+            },
+            
+            // Profile features
+            profileTabs: userData.profileTab || null,
             
             // Raw data for debugging
             _raw: {
