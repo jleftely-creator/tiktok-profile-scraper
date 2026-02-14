@@ -220,7 +220,6 @@ export class TikTokAPI {
             viewport: { width: 1920, height: 1080 },
             locale: 'en-US',
             timezoneId: 'America/New_York',
-            geolocation: null,
             permissions: [],
             extraHTTPHeaders: {
                 'Accept-Language': 'en-US,en;q=0.9',

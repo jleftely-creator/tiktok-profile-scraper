@@ -17,5 +17,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "apify-cli": "^1.2.1"
   }
 }
