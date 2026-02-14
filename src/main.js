@@ -15,6 +15,9 @@
  *   - Data quality score for each profile
  *   - Account age validation
  *   - Bio and bioLink extraction
+ *
+ * v1.1: Rewritten to use Playwright browser for JS rendering.
+ *   TikTok's anti-bot requires full browser execution.
  */
 
 import { Actor } from 'apify';
@@ -371,6 +374,10 @@ if (warnings.length > 0) {
         console.log(`  - @${warn.username} (score: ${warn.qualityScore}/100): ${warn.issues.join(', ')}`);
     }
 }
+
+// Close browser
+console.log('Closing browser...');
+await api.close();
 
 // Store summary in key-value store
 await Actor.setValue('summary', {

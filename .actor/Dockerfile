@@ -1,5 +1,6 @@
-# Use Node.js 20 base image (required for ES modules and modern packages)
-FROM apify/actor-node:20
+# Use Playwright Chrome image for browser-based scraping
+# TikTok requires JavaScript execution - HTTP-only approach gets blocked
+FROM apify/actor-node-playwright-chrome:20
 
 # Copy package files first for better caching
 COPY package*.json ./
