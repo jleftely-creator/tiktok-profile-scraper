@@ -225,18 +225,35 @@ if (proxyConfiguration) {
     proxyUrl = await proxyConfig?.newUrl();
     proxyLocation = proxyConfiguration.apifyProxyGroups?.[0] || null;
 } else {
-    // Auto-configure residential proxy when none specified
-    try {
-        const autoProxyConfig = await Actor.createProxyConfiguration({
-            useApifyProxy: true,
-            apifyProxyGroups: ['RESIDENTIAL'],
-        });
-        proxyUrl = await autoProxyConfig?.newUrl();
-        proxyLocation = 'US';
-        console.log('Auto-configured residential proxy (TikTok requires it)');
-    } catch (e) {
-        console.warn('Could not auto-configure proxy:', e.message);
-        console.warn('TikTok will likely block requests without a residential proxy.');
+    // Auto-configure proxy when none specified
+    // Try residential first, fallback to datacenter US
+    const proxyGroups = ['RESIDENTIAL', 'BUYPROXIES94952'];
+    for (const group of proxyGroups) {
+        try {
+            const autoProxyConfig = await Actor.createProxyConfiguration({
+                useApifyProxy: true,
+                apifyProxyGroups: [group],
+                countryCode: 'US',
+            });
+            proxyUrl = await autoProxyConfig?.newUrl();
+            proxyLocation = 'US';
+            console.log(`Auto-configured ${group} proxy for TikTok`);
+            break;
+        } catch (e) {
+            console.warn(`Could not configure ${group} proxy:`, e.message);
+        }
+    }
+    if (!proxyUrl) {
+        // Last resort: default Apify proxy
+        try {
+            const defaultProxy = await Actor.createProxyConfiguration({
+                useApifyProxy: true,
+            });
+            proxyUrl = await defaultProxy?.newUrl();
+            console.log('Using default Apify proxy');
+        } catch (e) {
+            console.warn('No proxy available. TikTok will likely block requests.');
+        }
     }
 }
 
