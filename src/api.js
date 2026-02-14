@@ -629,7 +629,7 @@ export class TikTokAPI {
     /**
      * Parse user profile data from HTML
      */
-    parseProfileFromHtml(html, username) {
+    async parseProfileFromHtml(html, username) {
         let userData = null;
         let stats = null;
 
