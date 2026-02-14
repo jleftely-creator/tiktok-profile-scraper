@@ -29,6 +29,32 @@ const API_BASE = 'https://www.tiktok.com';
 const API_BASE_MOBILE = 'https://m.tiktok.com';
 
 /**
+ * Recursively find user data in a nested JSON object
+ * Looks for objects containing followerCount/fans alongside the username
+ */
+function findUserData(obj, username, depth = 0) {
+    if (depth > 10 || !obj || typeof obj !== 'object') return null;
+
+    // Check if this object has user-like properties
+    if (obj.uniqueId === username || obj.unique_id === username) {
+        return { user: obj, stats: null };
+    }
+
+    // Check for userInfo structure
+    if (obj.userInfo?.user?.uniqueId === username) {
+        return { user: obj.userInfo.user, stats: obj.userInfo.stats };
+    }
+
+    // Recurse into object properties
+    for (const key of Object.keys(obj)) {
+        const result = findUserData(obj[key], username, depth + 1);
+        if (result) return result;
+    }
+
+    return null;
+}
+
+/**
  * Box-Muller transform to generate Gaussian-distributed random numbers
  * Used for realistic request delays
  *
@@ -637,6 +663,46 @@ export class TikTokAPI {
                     }
                 } catch (e) {
                     console.error('Failed to parse UNIVERSAL_DATA:', e.message);
+                }
+            }
+        }
+
+        // Try __NEXT_DATA__ as another fallback (newer TikTok pages)
+        if (!userData) {
+            const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([^<]+)<\/script>/);
+            if (nextDataMatch) {
+                try {
+                    const data = JSON.parse(nextDataMatch[1]);
+                    const userInfo = data?.props?.pageProps?.userInfo;
+                    if (userInfo) {
+                        userData = userInfo.user;
+                        stats = userInfo.stats;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse NEXT_DATA:', e.message);
+                }
+            }
+        }
+
+        // Try generic JSON-LD or embedded JSON extraction
+        if (!userData) {
+            // Look for any script tag containing the username's data
+            const allScripts = html.match(/<script[^>]*>([^<]{100,})<\/script>/g) || [];
+            for (const script of allScripts) {
+                const content = script.replace(/<\/?script[^>]*>/g, '');
+                try {
+                    if (content.includes(username) && (content.includes('followerCount') || content.includes('fans'))) {
+                        const data = JSON.parse(content);
+                        // Traverse the object to find user data
+                        const found = findUserData(data, username);
+                        if (found) {
+                            userData = found.user;
+                            stats = found.stats;
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    // Not valid JSON, skip
                 }
             }
         }
