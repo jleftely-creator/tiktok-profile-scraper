@@ -216,13 +216,28 @@ if (uniqueUsernames.length === 0) {
 
 console.log(`Processing ${uniqueUsernames.length} unique TikTok profile(s)...`);
 
-// Setup proxy if configured
+// Setup proxy - AUTO-USE residential proxy if none configured
+// TikTok aggressively blocks datacenter IPs, residential proxy is required
 let proxyUrl = null;
 let proxyLocation = null;
 if (proxyConfiguration) {
     const proxyConfig = await Actor.createProxyConfiguration(proxyConfiguration);
     proxyUrl = await proxyConfig?.newUrl();
     proxyLocation = proxyConfiguration.apifyProxyGroups?.[0] || null;
+} else {
+    // Auto-configure residential proxy when none specified
+    try {
+        const autoProxyConfig = await Actor.createProxyConfiguration({
+            useApifyProxy: true,
+            apifyProxyGroups: ['RESIDENTIAL'],
+        });
+        proxyUrl = await autoProxyConfig?.newUrl();
+        proxyLocation = 'US';
+        console.log('Auto-configured residential proxy (TikTok requires it)');
+    } catch (e) {
+        console.warn('Could not auto-configure proxy:', e.message);
+        console.warn('TikTok will likely block requests without a residential proxy.');
+    }
 }
 
 // Initialize API client

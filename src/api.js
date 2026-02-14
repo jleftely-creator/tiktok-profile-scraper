@@ -14,6 +14,7 @@
 
 import got from 'got';
 import { CookieJar } from 'tough-cookie';
+import { HttpsProxyAgent } from 'hpagent';
 import {
     generateDeviceId,
     buildQueryParams,
@@ -298,10 +299,21 @@ export class TikTokAPI {
         this.userAgent = options.userAgent || getRandomUserAgent();
         this.deviceId = options.deviceId || generateDeviceId();
         this.cookieJar = new CookieJar();
-        this.proxy = options.proxy || null;
         this.proxyLocation = options.proxyLocation || null;
         this.requestCount = 0;
         this.lastRequestTime = 0;
+
+        // Setup proxy agent from URL
+        this.proxyAgent = null;
+        if (options.proxy) {
+            try {
+                this.proxyAgent = {
+                    https: new HttpsProxyAgent({ proxy: options.proxy }),
+                };
+            } catch (e) {
+                console.warn('Failed to create proxy agent:', e.message);
+            }
+        }
 
         // Set initial cookies
         this.setCookie(`tt_webid_v2=${this.deviceId}; Domain=.tiktok.com; Path=/`);
@@ -366,7 +378,7 @@ export class TikTokAPI {
                 headers: buildHeaders(this.userAgent),
                 followRedirect: true,
                 timeout: { request: 15000 },
-                ...(this.proxy ? { agent: this.proxy } : {}),
+                ...(this.proxyAgent ? { agent: this.proxyAgent } : {}),
             });
 
             // Check for blocks
@@ -424,7 +436,7 @@ export class TikTokAPI {
                 headers: buildHeaders(this.userAgent, this.getCookieString()),
                 followRedirect: true,
                 timeout: { request: 15000 },
-                ...(this.proxy ? { agent: this.proxy } : {}),
+                ...(this.proxyAgent ? { agent: this.proxyAgent } : {}),
             });
 
             // Check for blocks
@@ -516,7 +528,7 @@ export class TikTokAPI {
                 headers: buildHeaders(this.userAgent, this.getCookieString()),
                 timeout: { request: 15000 },
                 responseType: 'json',
-                ...(this.proxy ? { agent: this.proxy } : {}),
+                ...(this.proxyAgent ? { agent: this.proxyAgent } : {}),
             });
 
             // Check for blocks
@@ -553,7 +565,7 @@ export class TikTokAPI {
                 headers: buildHeaders(this.userAgent, this.getCookieString()),
                 followRedirect: true,
                 timeout: { request: 20000 },
-                ...(this.proxy ? { agent: this.proxy } : {}),
+                ...(this.proxyAgent ? { agent: this.proxyAgent } : {}),
             });
 
             // Check for blocks
