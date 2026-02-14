@@ -241,10 +241,14 @@ function isBlocked(statusCode, body = '') {
     if (statusCode === 401) return true;
 
     // Check response body for block indicators
+    // Be more specific to avoid false positives from TikTok page content
     if (typeof body === 'string') {
-        if (body.includes('Too many requests') || body.includes('blocked')) {
-            return true;
-        }
+        if (body.includes('Too many requests')) return true;
+        // Only flag as blocked if it's a captcha/challenge page
+        if (body.includes('captcha') && body.includes('verify')) return true;
+        if (body.includes('Access Denied') && body.length < 2000) return true;
+        // Very short responses that aren't JSON are likely blocks
+        if (body.length < 500 && !body.includes('{') && !body.includes('<html')) return true;
     }
 
     return false;
@@ -707,7 +711,35 @@ export class TikTokAPI {
             }
         }
 
+        // Try Oembed API as final fallback (limited data but reliable)
         if (!userData) {
+            try {
+                const oembedUrl = `https://www.tiktok.com/oembed?url=https://www.tiktok.com/@${username}`;
+                const oembedResp = await got(oembedUrl, {
+                    headers: { 'User-Agent': this.userAgent },
+                    timeout: { request: 10000 },
+                    responseType: 'json',
+                    ...(this.proxyAgent ? { agent: this.proxyAgent } : {}),
+                });
+                if (oembedResp.body && oembedResp.body.author_name) {
+                    console.log(`Using oembed fallback for @${username}`);
+                    userData = {
+                        uniqueId: username,
+                        nickname: oembedResp.body.author_name,
+                        verified: false,
+                        signature: '',
+                    };
+                    // Oembed doesn't have stats, we'll try to get them separately
+                }
+            } catch (e) {
+                // Oembed also failed
+            }
+        }
+
+        if (!userData) {
+            // Log what we actually received for debugging
+            const bodyPreview = html.substring(0, 500);
+            console.error(`Page content preview (first 500 chars): ${bodyPreview}`);
             throw new Error('Could not extract user data from page');
         }
 
